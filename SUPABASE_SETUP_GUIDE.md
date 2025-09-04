@@ -29,9 +29,6 @@ Supabase will handle real-time messaging between admins and patients while maint
 Run these SQL commands in Supabase SQL Editor:
 
 ```sql
--- Enable Row Level Security
-ALTER TABLE auth.users ENABLE ROW LEVEL SECURITY;
-
 -- Messages table for admin-patient communication
 CREATE TABLE messages (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
