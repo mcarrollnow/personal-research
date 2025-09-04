@@ -123,11 +123,11 @@ Transform existing beautiful chat UI into a functional admin-patient messaging s
 **Dependencies**: Chunk 3 complete
 
 ### **Tasks:**
-1. **Backend Integration** (Supabase recommended)
-   - Set up Supabase project
-   - Create messages table
+1. **Supabase Integration** (CHOSEN BACKEND)
+   - Set up Supabase project (follow SUPABASE_SETUP_GUIDE.md)
+   - Create messages + conversations + admin_users tables
    - Configure real-time subscriptions
-   - Row Level Security setup
+   - Row Level Security for patient data isolation
 
 2. **Update Chat State Management**
    - Replace mock data with real API calls
@@ -312,8 +312,8 @@ Transform existing beautiful chat UI into a functional admin-patient messaging s
 ### **Session 1 Starter:**
 ```bash
 # "I want to work on Chunk 1: Data Structure & Google Sheets Extension"
-# "Add messaging sheets to the existing Google Sheets structure"
-# "Extend GoogleSheetsService for admin-patient messaging"
+# "I've set up Supabase following SUPABASE_SETUP_GUIDE.md"
+# "Now extend GoogleSheetsService and create Supabase messaging integration"
 ```
 
 ### **Session 2 Starter:**
