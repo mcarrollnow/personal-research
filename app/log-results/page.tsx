@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Bullet } from "@/components/ui/bullet";
 import { googleSheetsService } from "@/lib/google-sheets";
+import { dashboardDataService } from "@/lib/dashboard-data";
+import { useEffect } from "react";
 
 export default function LogResultsPage() {
   const [formData, setFormData] = useState({
@@ -31,6 +33,30 @@ export default function LogResultsPage() {
     injectionSite: "",
     notes: ""
   });
+
+  const [recentEntries, setRecentEntries] = useState([
+    { date: "Today", weight: "185.2 lbs", status: "Complete" },
+    { date: "Yesterday", weight: "185.8 lbs", status: "Complete" },
+    { date: "2 days ago", weight: "186.1 lbs", status: "Complete" },
+    { date: "3 days ago", weight: "186.5 lbs", status: "Partial" },
+    { date: "4 days ago", weight: "186.9 lbs", status: "Complete" }
+  ]);
+
+  // Fetch real recent entries on component mount
+  useEffect(() => {
+    const fetchRecentEntries = async () => {
+      try {
+        const entries = await dashboardDataService.getRecentEntries();
+        if (entries.length > 0) {
+          setRecentEntries(entries);
+        }
+      } catch (error) {
+        console.error('Error fetching recent entries:', error);
+      }
+    };
+
+    fetchRecentEntries();
+  }, []);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev: any) => ({
@@ -302,13 +328,7 @@ export default function LogResultsPage() {
         addon={<Badge variant="secondary">LAST 7 DAYS</Badge>}
       >
         <div className="space-y-3">
-          {[
-            { date: "Today", weight: "185.2 lbs", status: "Complete" },
-            { date: "Yesterday", weight: "185.8 lbs", status: "Complete" },
-            { date: "2 days ago", weight: "186.1 lbs", status: "Complete" },
-            { date: "3 days ago", weight: "186.5 lbs", status: "Partial" },
-            { date: "4 days ago", weight: "186.9 lbs", status: "Complete" }
-          ].map((entry, index) => (
+          {recentEntries.map((entry, index) => (
             <div key={index} className="flex items-center justify-between p-3 bg-accent rounded">
               <div className="flex items-center gap-3">
                 <div className="flex items-center justify-center rounded bg-primary text-primary-foreground size-8 font-display text-sm">
