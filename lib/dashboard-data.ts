@@ -1,5 +1,6 @@
 // Dashboard Data Service - Fetches real data from Google Sheets and formats it for display
 import { googleSheetsService } from './google-sheets';
+import { patientAuthService } from './patient-auth';
 
 export interface DashboardData {
   stats: {
@@ -26,14 +27,19 @@ export interface DashboardData {
 }
 
 class DashboardDataService {
-  private patientId: string = "PATIENT-001"; // This would come from authentication
+  private getPatientId(): string {
+    // Get current authenticated patient ID
+    const patientId = patientAuthService.getCurrentPatientId();
+    return patientId || "PATIENT-001"; // Fallback for demo
+  }
 
   // Calculate dashboard statistics from Google Sheets data
   async getDashboardStats(): Promise<DashboardData['stats']> {
     try {
       // Get patient profile for baseline data
-      const profileData = await googleSheetsService.getData('patientProfiles', this.patientId);
-      const dailyLogs = await googleSheetsService.getData('dailyLogs', this.patientId);
+      const patientId = this.getPatientId();
+      const profileData = await googleSheetsService.getData('patientProfiles', patientId);
+      const dailyLogs = await googleSheetsService.getData('dailyLogs', patientId);
 
       if (!profileData.length || !dailyLogs.length) {
         // Return default values if no data
@@ -111,8 +117,9 @@ class DashboardDataService {
   // Get chart data for weight loss visualization
   async getChartData(): Promise<DashboardData['chartData']> {
     try {
-      const dailyLogs = await googleSheetsService.getData('dailyLogs', this.patientId);
-      const profileData = await googleSheetsService.getData('patientProfiles', this.patientId);
+      const patientId = this.getPatientId();
+      const dailyLogs = await googleSheetsService.getData('dailyLogs', patientId);
+      const profileData = await googleSheetsService.getData('patientProfiles', patientId);
       
       if (!dailyLogs.length || !profileData.length) {
         return { week: [] };
@@ -171,7 +178,8 @@ class DashboardDataService {
   // Get recent entries for display
   async getRecentEntries(): Promise<DashboardData['recentEntries']> {
     try {
-      const dailyLogs = await googleSheetsService.getData('dailyLogs', this.patientId);
+      const patientId = this.getPatientId();
+      const dailyLogs = await googleSheetsService.getData('dailyLogs', patientId);
       
       return dailyLogs
         .slice(-7) // Last 7 entries

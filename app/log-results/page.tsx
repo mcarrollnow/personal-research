@@ -15,6 +15,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Bullet } from "@/components/ui/bullet";
 import { googleSheetsService } from "@/lib/google-sheets";
 import { dashboardDataService } from "@/lib/dashboard-data";
+import { patientAuthService } from "@/lib/patient-auth";
 import { useEffect } from "react";
 
 export default function LogResultsPage() {
@@ -67,8 +68,9 @@ export default function LogResultsPage() {
 
   const handleSubmit = async () => {
     // Prepare data for Google Sheets
+    const patientId = patientAuthService.getCurrentPatientId() || "PATIENT-001";
     const dailyLogData = {
-      patientId: "PATIENT-001", // This would come from user authentication
+      patientId: patientId,
       date: new Date().toISOString().split('T')[0],
       weight: parseFloat(formData.weight) || 0,
       waistCircumference: parseFloat(formData.waistCircumference) || 0,
