@@ -30,11 +30,11 @@ const isV0 = process.env["VERCEL_URL"]?.includes("vusercontent.net") ?? false;
 
 export const metadata: Metadata = {
   title: {
-    template: "%s – M.O.N.K.Y OS",
-    default: "M.O.N.K.Y OS",
+    template: "%s – Results Pro",
+    default: "Results Pro",
   },
   description:
-    "The ultimate OS for rebels. Making the web for brave individuals.",
+    "Powered by Peptide Initiative",
     generator: 'v0.app'
 };
 
@@ -62,10 +62,13 @@ export default function RootLayout({
             {/* Mobile Header - only visible on mobile */}
             <MobileHeader mockData={mockData} />
 
+            {/* Sidebar - handles mobile/desktop automatically */}
+            <DashboardSidebar />
+
             {/* Desktop Layout */}
             <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-gap lg:px-sides">
               <div className="hidden lg:block col-span-2 top-0 relative">
-                <DashboardSidebar />
+                {/* Sidebar space on desktop only */}
               </div>
               <div className="col-span-1 lg:col-span-7">{children}</div>
               <div className="col-span-3 hidden lg:block">

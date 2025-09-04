@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import MonkeyIcon from "@/components/icons/monkey";
+import EagleIcon from "@/components/icons/eagle";
 import MobileNotifications from "@/components/dashboard/notifications/mobile-notifications";
 import type { MockData } from "@/types/dashboard";
 import BellIcon from "@/components/icons/bell";
@@ -25,7 +25,7 @@ export function MobileHeader({ mockData }: MobileHeaderProps) {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <div className="h-8 w-16 bg-primary rounded flex items-center justify-center">
-              <MonkeyIcon className="size-6 text-primary-foreground" />
+              <EagleIcon className="w-6 h-4 text-primary-foreground" />
             </div>
           </div>
         </div>
