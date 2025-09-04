@@ -92,8 +92,8 @@ export function DashboardSidebar({ className, ...props }: React.ComponentProps<t
   return (
     <Sidebar {...props} className={cn("py-sides", className)}>
       <SidebarHeader className="rounded-t-lg flex gap-3 flex-row rounded-b-none">
-        <div className="flex overflow-clip size-12 shrink-0 items-center justify-center rounded bg-sidebar-primary-foreground/10 transition-colors group-hover:bg-sidebar-primary text-sidebar-primary-foreground">
-          <EagleIcon className="w-10 h-6 group-hover:scale-[1.3] group-hover:translate-y-[-2px] origin-center transition-all duration-300 ease-out" />
+        <div className="flex overflow-hidden size-12 shrink-0 items-center justify-center rounded bg-sidebar-primary-foreground/10 transition-colors group-hover:bg-sidebar-primary text-sidebar-primary-foreground">
+          <EagleIcon className="w-full h-full scale-75 group-hover:scale-90 origin-center transition-all duration-300 ease-out" />
         </div>
         <div className="grid flex-1 text-left text-sm leading-tight">
           <span className="text-2xl font-display">results pro</span>
@@ -179,7 +179,7 @@ export function DashboardSidebar({ className, ...props }: React.ComponentProps<t
                   <PopoverContent className="w-56 p-0" side="bottom" align="end" sideOffset={4}>
                                           <div className="flex flex-col">
                         <button className="flex items-center px-4 py-2 text-sm hover:bg-accent">
-                          <EagleIcon className="mr-2 h-4 w-4" />
+                          <EagleIcon className="mr-2 h-4 w-6 scale-75" />
                           Account
                         </button>
                       <button className="flex items-center px-4 py-2 text-sm hover:bg-accent">

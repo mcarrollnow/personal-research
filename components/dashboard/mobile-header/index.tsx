@@ -24,8 +24,8 @@ export function MobileHeader({ mockData }: MobileHeaderProps) {
         {/* Center: Monkey Logo + Time */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-16 bg-primary rounded flex items-center justify-center">
-              <EagleIcon className="w-6 h-4 text-primary-foreground" />
+            <div className="h-8 w-16 bg-primary rounded flex items-center justify-center overflow-hidden">
+              <EagleIcon className="w-full h-full scale-50 text-primary-foreground" />
             </div>
           </div>
         </div>
