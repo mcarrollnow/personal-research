@@ -12,12 +12,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Bullet } from "@/components/ui/bullet";
-import { patientAuthService } from "@/lib/patient-auth";
+import { adminAuthService } from "@/lib/admin-auth";
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const [formData, setFormData] = useState({
     email: "",
-    patientId: ""
+    adminId: ""
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -36,15 +36,15 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const success = await patientAuthService.authenticatePatient(
+      const success = await adminAuthService.authenticateAdmin(
         formData.email, 
-        formData.patientId
+        formData.adminId
       );
 
       if (success) {
-        router.push("/"); // Redirect to dashboard
+        router.push("/admin/dashboard"); // Redirect to admin dashboard
       } else {
-        setError("Invalid email or patient ID. Please check your credentials.");
+        setError("Invalid email or admin ID. Please check your credentials.");
       }
     } catch (error) {
       setError("Login failed. Please try again.");
@@ -56,28 +56,28 @@ export default function LoginPage() {
   return (
     <DashboardPageLayout
       header={{
-        title: "Patient Login",
-        description: "Access Your Dashboard",
+        title: "Admin Login",
+        description: "Clinical Research Administration",
         icon: BracketsIcon,
       }}
     >
       {/* Welcome Message */}
       <DashboardCard
-        title="WELCOME BACK"
+        title="ADMIN ACCESS"
         intent="default"
-        addon={<Badge variant="outline">SECURE ACCESS</Badge>}
+        addon={<Badge variant="outline">SECURE PORTAL</Badge>}
       >
         <div className="bg-accent p-4 rounded-lg text-center">
-          <h4 className="font-display text-lg mb-2">PEPTIDE INITIATIVE DASHBOARD</h4>
+          <h4 className="font-display text-lg mb-2">PEPTIDE INITIATIVE ADMIN</h4>
           <p className="text-sm text-muted-foreground">
-            Log in to access your personalized peptide tracking dashboard and contribute to revolutionary clinical research.
+            Access the administrative dashboard to manage patients, monitor progress, and provide clinical support.
           </p>
         </div>
       </DashboardCard>
 
       {/* Login Form */}
       <DashboardCard
-        title="PATIENT ACCESS"
+        title="ADMINISTRATOR LOGIN"
         intent="default"
       >
         <div className="max-w-md mx-auto space-y-6">
@@ -87,19 +87,19 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder="Enter your admin email"
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="patientId" className="text-sm font-medium">Patient ID</Label>
+              <Label htmlFor="adminId" className="text-sm font-medium">Admin ID</Label>
               <Input
-                id="patientId"
-                placeholder="Enter your patient ID"
-                value={formData.patientId}
-                onChange={(e) => handleInputChange("patientId", e.target.value)}
+                id="adminId"
+                placeholder="Enter your admin ID"
+                value={formData.adminId}
+                onChange={(e) => handleInputChange("adminId", e.target.value)}
               />
             </div>
 
@@ -111,29 +111,30 @@ export default function LoginPage() {
 
             <Button 
               onClick={handleLogin}
-              disabled={loading || !formData.email || !formData.patientId}
+              disabled={loading || !formData.email || !formData.adminId}
               className="w-full"
             >
-              {loading ? "Logging in..." : "Access Dashboard"}
+              {loading ? "Authenticating..." : "Access Admin Portal"}
             </Button>
           </div>
         </div>
       </DashboardCard>
 
-      {/* Demo Credentials */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Demo Admin Credentials */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="relative overflow-hidden">
           <CardHeader className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2.5">
-              <Bullet variant="default" />
-              DEMO PATIENT 1
+              <Bullet variant="success" />
+              COORDINATOR
             </CardTitle>
           </CardHeader>
           <CardContent className="bg-accent flex-1 pt-2 md:pt-6">
             <div className="space-y-2">
-              <p className="text-sm"><strong>Email:</strong> john.smith@email.com</p>
-              <p className="text-sm"><strong>Patient ID:</strong> PATIENT-001</p>
-              <p className="text-sm text-muted-foreground">Semaglutide • 8 weeks progress</p>
+              <p className="text-sm"><strong>Email:</strong> admin@clinic.com</p>
+              <p className="text-sm"><strong>Admin ID:</strong> ADMIN-001</p>
+              <p className="text-sm text-muted-foreground">Dr. Sarah Johnson • Clinical Research</p>
+              <p className="text-xs text-muted-foreground">Full patient management access</p>
             </div>
           </CardContent>
         </Card>
@@ -141,28 +142,46 @@ export default function LoginPage() {
         <Card className="relative overflow-hidden">
           <CardHeader className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2.5">
-              <Bullet variant="success" />
-              DEMO PATIENT 2
+              <Bullet variant="warning" />
+              SUPERVISOR
             </CardTitle>
           </CardHeader>
           <CardContent className="bg-accent flex-1 pt-2 md:pt-6">
             <div className="space-y-2">
-              <p className="text-sm"><strong>Email:</strong> sarah.j@email.com</p>
-              <p className="text-sm"><strong>Patient ID:</strong> PATIENT-002</p>
-              <p className="text-sm text-muted-foreground">Tirzepatide • 6 weeks progress</p>
+              <p className="text-sm"><strong>Email:</strong> supervisor@clinic.com</p>
+              <p className="text-sm"><strong>Admin ID:</strong> ADMIN-002</p>
+              <p className="text-sm text-muted-foreground">Dr. Michael Chen • Medical Oversight</p>
+              <p className="text-xs text-muted-foreground">Advanced admin permissions</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2.5">
+              <Bullet variant="default" />
+              SUPPORT
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="bg-accent flex-1 pt-2 md:pt-6">
+            <div className="space-y-2">
+              <p className="text-sm"><strong>Email:</strong> support@clinic.com</p>
+              <p className="text-sm"><strong>Admin ID:</strong> ADMIN-003</p>
+              <p className="text-sm text-muted-foreground">Lisa Rodriguez • Patient Support</p>
+              <p className="text-xs text-muted-foreground">Basic messaging support</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Admin Login Link */}
+      {/* Return to Patient Login */}
       <div className="text-center">
-        <p className="text-sm text-muted-foreground mb-2">Healthcare provider?</p>
+        <p className="text-sm text-muted-foreground mb-2">Not an administrator?</p>
         <Button 
           variant="outline" 
-          onClick={() => router.push("/admin/login")}
+          onClick={() => router.push("/login")}
         >
-          Admin Login
+          Patient Login
         </Button>
       </div>
     </DashboardPageLayout>
