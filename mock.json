@@ -1,0 +1,222 @@
+{
+  "dashboardStats": [
+    {
+      "label": "TOTAL WEIGHT LOSS",
+      "value": "49 lbs",
+      "description": "25 weeks",
+      "intent": "positive",
+      "icon": "gear",
+      "direction": "up"
+    },
+    {
+      "label": "AVERAGE WEIGHT LOSS",
+      "value": "2.2 lbs",
+      "description": "per week",
+      "intent": "positive",
+      "icon": "proccesor",
+      "direction": "up"
+    },
+    {
+      "label": "TRENDS",
+      "value": "4 weeks",
+      "description": "Amount Lost increased every week",
+      "intent": "positive",
+      "icon": "boom",
+      "tag": "4 weeks 🔥"
+    }
+  ],
+  "chartData": {
+    "week": [
+      {
+        "date": "06/07",
+        "randy": 50000,
+        "averageResults": 30000,
+        "goals": 10000
+      },
+      {
+        "date": "07/07",
+        "randy": 250000,
+        "averageResults": 15000,
+        "goals": 30000
+      },
+      {
+        "date": "08/07",
+        "randy": 200000,
+        "averageResults": 50000,
+        "goals": 25000
+      },
+      {
+        "date": "09/07",
+        "randy": 280000,
+        "averageResults": 60000,
+        "goals": 45000
+      },
+      {
+        "date": "10/07",
+        "randy": 120000,
+        "averageResults": 20000,
+        "goals": 15000
+      },
+      {
+        "date": "11/07",
+        "randy": 180000,
+        "averageResults": 55000,
+        "goals": 20000
+      },
+      {
+        "date": "12/07",
+        "randy": 500000,
+        "averageResults": 35000,
+        "goals": 20000
+      },
+      {
+        "date": "13/07",
+        "randy": 130000,
+        "averageResults": 60000,
+        "goals": 10000
+      }
+    ],
+    "month": [
+      { "date": "Jan", "averageResults": 45000, "randy": 180000, "goals": 25000 },
+      { "date": "Feb", "averageResults": 30000, "randy": 120000, "goals": 20000 },
+      { "date": "Mar", "averageResults": 65000, "randy": 280000, "goals": 35000 },
+      { "date": "Apr", "averageResults": 25000, "randy": 160000, "goals": 18000 },
+      { "date": "May", "averageResults": 80000, "randy": 350000, "goals": 45000 },
+      { "date": "Jun", "averageResults": 40000, "randy": 90000, "goals": 25000 },
+      { "date": "Jul", "averageResults": 70000, "randy": 220000, "goals": 40000 },
+      { "date": "Aug", "averageResults": 55000, "randy": 170000, "goals": 30000 },
+      { "date": "Sep", "averageResults": 60000, "randy": 200000, "goals": 35000 },
+      { "date": "Oct", "averageResults": 35000, "randy": 140000, "goals": 22000 },
+      { "date": "Nov", "averageResults": 75000, "randy": 340000, "goals": 38000 },
+      { "date": "Dec", "averageResults": 90000, "randy": 420000, "goals": 50000 }
+    ],
+    "year": [
+      {
+        "date": "2020",
+        "averageResults": 280000,
+        "randy": 580000,
+        "goals": 150000
+      },
+      {
+        "date": "2021",
+        "averageResults": 320000,
+        "randy": 650000,
+        "goals": 180000
+      },
+      {
+        "date": "2022",
+        "averageResults": 450000,
+        "randy": 950000,
+        "goals": 250000
+      },
+      {
+        "date": "2023",
+        "averageResults": 200000,
+        "randy": 520000,
+        "goals": 120000
+      },
+      { "date": "2024", "averageResults": 380000, "randy": 820000, "goals": 200000 }
+    ]
+  },
+  "rebelsRanking": [
+    {
+      "id": 1,
+      "name": "RANDY",
+      "handle": "@RANDY",
+      "streak": "2 WEEKS PROGRESS 🔥",
+      "points": 148,
+      "avatar": "/avatars/user_krimson.png",
+      "featured": true,
+      "subtitle": "2 WEEKS PROGRESS 🔥"
+    },
+    {
+      "id": 2,
+      "name": "SARAH",
+      "handle": "@SARAH",
+      "streak": "",
+      "points": 129,
+      "avatar": "/avatars/user_mati.png"
+    },
+    {
+      "id": 3,
+      "name": "MIKE",
+      "handle": "@MIKE",
+      "streak": "",
+      "points": 108,
+      "avatar": "/avatars/user_pek.png"
+    },
+    {
+      "id": 4,
+      "name": "JENNY",
+      "handle": "@JENNY",
+      "streak": "",
+      "points": 64,
+      "avatar": "/avatars/user_joyboy.png"
+    }
+  ],
+  "securityStatus": [
+    {
+      "title": "METRIC A",
+      "value": "124/124",
+      "status": "[ACTIVE]",
+      "variant": "success"
+    },
+    {
+      "title": "METRIC B",
+      "value": "99.9%",
+      "status": "[OPTIMAL]",
+      "variant": "success"
+    },
+    {
+      "title": "METRIC C",
+      "value": "12042",
+      "status": "[MONITORING]",
+      "variant": "warning"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif-1",
+      "title": "PAYMENT RECEIVED",
+      "message": "Your payment to Rampant Studio has been processed successfully.",
+      "timestamp": "2024-07-10T13:39:00Z",
+      "type": "success",
+      "read": false,
+      "priority": "medium"
+    },
+    {
+      "id": "notif-2",
+      "title": "INTRO: JOYCO STUDIO AND V0",
+      "message": "About us - We're a healthcare company focused on accessibility and innovation.",
+      "timestamp": "2024-07-10T13:35:00Z",
+      "type": "info",
+      "read": false,
+      "priority": "low"
+    },
+    {
+      "id": "notif-3",
+      "title": "SYSTEM UPDATE",
+      "message": "Security patches have been applied to all guard bots.",
+      "timestamp": "2024-07-10T12:15:00Z",
+      "type": "info",
+      "read": true,
+      "priority": "medium"
+    },
+    {
+      "id": "notif-4",
+      "title": "FIREWALL ALERT",
+      "message": "Blocked 247 suspicious connection attempts in the last hour.",
+      "timestamp": "2024-07-10T11:45:00Z",
+      "type": "warning",
+      "read": true,
+      "priority": "high"
+    }
+  ],
+  "widgetData": {
+    "location": "Buenos Aires, Argentina",
+    "timezone": "UTC-3",
+    "temperature": "18°C",
+    "weather": "Partly Cloudy",
+    "date": "Wednesday, July 10th, 2025"
+  }
+}
