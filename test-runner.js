@@ -43,7 +43,7 @@ async function runTests() {
     console.log('\n🚀 Importing test modules...')
     
     // Dynamic import for ES modules
-    const { runAllTests, runQuickTest, individualTests } = await import('./lib/test-messaging-system.js')
+    const { runAllTests, runQuickTest, individualTests } = await import('./lib/test-messaging-system.ts')
     
     const testType = process.argv[2] || 'full'
     
