@@ -10,6 +10,7 @@ export interface DashboardData {
     currentWeight: number;
     startingWeight: number;
     weeksActive: number;
+    recentTrend: number;
   };
   chartData: {
     week: Array<{
@@ -49,7 +50,8 @@ class DashboardDataService {
           consistency: 0,
           currentWeight: 0,
           startingWeight: 0,
-          weeksActive: 0
+          weeksActive: 0,
+          recentTrend: 0
         };
       }
 
@@ -74,7 +76,8 @@ class DashboardDataService {
           consistency: 0,
           currentWeight: startingWeight,
           startingWeight,
-          weeksActive: 0
+          weeksActive: 0,
+          recentTrend: 0
         };
       }
 
@@ -88,6 +91,17 @@ class DashboardDataService {
       
       const weeklyAverage = weeksActive > 0 ? totalWeightLoss / weeksActive : 0;
       
+      // Calculate recent trend (last 7 days vs previous 7 days)
+      const recentEntries = weightEntries.slice(-7);
+      const previousEntries = weightEntries.slice(-14, -7);
+      
+      let recentTrend = 0;
+      if (recentEntries.length > 0 && previousEntries.length > 0) {
+        const recentAvg = recentEntries.reduce((sum, entry) => sum + entry.weight, 0) / recentEntries.length;
+        const previousAvg = previousEntries.reduce((sum, entry) => sum + entry.weight, 0) / previousEntries.length;
+        recentTrend = previousAvg - recentAvg; // Positive = weight loss, Negative = weight gain
+      }
+      
       // Calculate consistency (doses taken vs total days)
       const dosesCompliant = dailyLogs.filter(log => log[11] === 'yes').length; // Full doses taken
       const totalDays = dailyLogs.length;
@@ -99,18 +113,20 @@ class DashboardDataService {
         consistency: Math.round(consistency),
         currentWeight,
         startingWeight,
-        weeksActive
+        weeksActive,
+        recentTrend: Math.round(recentTrend * 10) / 10 // Add trend data
       };
     } catch (error) {
       console.error('Error calculating dashboard stats:', error);
-      return {
-        totalWeightLoss: 0,
-        weeklyAverage: 0,
-        consistency: 0,
-        currentWeight: 0,
-        startingWeight: 0,
-        weeksActive: 0
-      };
+              return {
+          totalWeightLoss: 0,
+          weeklyAverage: 0,
+          consistency: 0,
+          currentWeight: 0,
+          startingWeight: 0,
+          weeksActive: 0,
+          recentTrend: 0
+        };
     }
   }
 

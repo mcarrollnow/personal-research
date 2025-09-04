@@ -6,7 +6,7 @@
       "description": "25 weeks",
       "intent": "positive",
       "icon": "gear",
-      "direction": "up"
+      "direction": "down"
     },
     {
       "label": "AVERAGE WEIGHT LOSS",
@@ -14,7 +14,7 @@
       "description": "per week",
       "intent": "positive",
       "icon": "proccesor",
-      "direction": "up"
+      "direction": "down"
     },
     {
       "label": "TRENDS",

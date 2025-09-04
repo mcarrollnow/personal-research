@@ -49,25 +49,26 @@ export default function DashboardOverview() {
       label: "TOTAL WEIGHT LOSS",
       value: `${realData.stats.totalWeightLoss} lbs`,
       description: `${realData.stats.weeksActive} weeks`,
-      intent: "positive" as const,
+      intent: realData.stats.totalWeightLoss > 0 ? "positive" as const : "neutral" as const,
       icon: "gear",
-      direction: "up" as const
+      direction: realData.stats.totalWeightLoss > 0 ? "down" as const : "up" as const // Down arrow for weight loss
     },
     {
       label: "WEEKLY AVERAGE",
       value: `${realData.stats.weeklyAverage} lbs`,
       description: "per week",
-      intent: "positive" as const,
-      icon: "proccesor",
-      direction: "up" as const
+      intent: realData.stats.weeklyAverage > 0 ? "positive" as const : "neutral" as const,
+      icon: "proccesor", 
+      direction: realData.stats.weeklyAverage > 0 ? "down" as const : "up" as const // Down arrow for weight loss
     },
     {
-      label: "COMPLIANCE",
-      value: `${realData.stats.consistency}%`,
-      description: "Dose adherence",
-      intent: "positive" as const,
+      label: "RECENT TREND",
+      value: `${Math.abs(realData.stats.recentTrend)} lbs`,
+      description: realData.stats.recentTrend > 0 ? "lost this week" : realData.stats.recentTrend < 0 ? "gained this week" : "no change",
+      intent: realData.stats.recentTrend > 0 ? "positive" as const : realData.stats.recentTrend < 0 ? "negative" as const : "neutral" as const,
       icon: "boom",
-      tag: realData.stats.consistency >= 90 ? "EXCELLENT 🔥" : undefined
+      direction: realData.stats.recentTrend > 0 ? "down" as const : realData.stats.recentTrend < 0 ? "up" as const : undefined,
+      tag: realData.stats.recentTrend > 2 ? "EXCELLENT 🔥" : realData.stats.recentTrend < -1 ? "WATCH 📈" : undefined
     }
   ] : mockData.dashboardStats;
 

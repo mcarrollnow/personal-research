@@ -19,7 +19,7 @@ export default function ProgressPage() {
       description: "8 weeks progress",
       intent: "positive" as const,
       icon: GearIcon,
-      direction: "up" as const
+      direction: "down" as const // Down arrow for weight loss
     },
     {
       label: "WEEKLY AVERAGE",
@@ -27,7 +27,7 @@ export default function ProgressPage() {
       description: "per week",
       intent: "positive" as const,
       icon: ProcessorIcon,
-      direction: "up" as const
+      direction: "down" as const // Down arrow for weight loss
     },
     {
       label: "CONSISTENCY",
