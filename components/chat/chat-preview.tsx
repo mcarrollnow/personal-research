@@ -1,8 +1,8 @@
 import Image from "next/image";
 import type { ChatConversation } from "@/types/chat";
 import { formatDate } from "./utils";
-import { mockChatData } from "@/data/chat-mock";
 import { cn } from "@/lib/utils";
+import { useChatState } from "./use-chat-state";
 
 interface ChatPreviewProps {
   conversation: ChatConversation;
@@ -13,8 +13,9 @@ export default function ChatPreview({
   conversation,
   onOpenConversation,
 }: ChatPreviewProps) {
+  const { currentUser } = useChatState();
   const user = conversation.participants.find(
-    (p) => p.id !== mockChatData.currentUser.id
+    (p) => p.id !== currentUser?.id
   );
 
   if (!user) return null;

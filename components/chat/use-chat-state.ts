@@ -1,6 +1,8 @@
 import { create } from "zustand";
-import type { ChatState, ChatMessage, ChatConversation } from "@/types/chat";
-import { mockChatData } from "@/data/chat-mock";
+import type { ChatState, ChatMessage, ChatConversation, ChatUser } from "@/types/chat";
+import { chatService } from "@/lib/chat-service";
+// Remove mock data import - we'll use real data now
+// import { mockChatData } from "@/data/chat-mock";
 
 type ChatComponentState = {
   state: ChatState;
@@ -12,15 +14,26 @@ interface ChatStore {
   chatState: ChatComponentState;
   conversations: ChatConversation[];
   newMessage: string;
+  isLoading: boolean;
+  error: string | null;
+  currentUser: ChatUser | null;
+  realtimeSubscription: any;
 
   // Actions
   setChatState: (state: ChatComponentState) => void;
   setConversations: (conversations: ChatConversation[]) => void;
   setNewMessage: (message: string) => void;
-  handleSendMessage: () => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  initializeChat: (userId: string, role?: 'admin' | 'patient') => Promise<void>;
+  loadConversations: () => Promise<void>;
+  handleSendMessage: () => Promise<void>;
   openConversation: (conversationId: string) => void;
   goBack: () => void;
   toggleExpanded: () => void;
+  addMessage: (conversationId: string, message: ChatMessage) => void;
+  updateConversationUnreadCount: (conversationId: string, count: number) => void;
+  cleanup: () => void;
 }
 
 const chatStore = create<ChatStore>((set, get) => ({
@@ -28,8 +41,12 @@ const chatStore = create<ChatStore>((set, get) => ({
   chatState: {
     state: "collapsed",
   },
-  conversations: mockChatData.conversations,
+  conversations: [],
   newMessage: "",
+  isLoading: false,
+  error: null,
+  currentUser: null,
+  realtimeSubscription: null,
 
   // Actions
   setChatState: (chatState) => set({ chatState }),
@@ -38,28 +55,107 @@ const chatStore = create<ChatStore>((set, get) => ({
 
   setNewMessage: (newMessage) => set({ newMessage }),
 
-  handleSendMessage: () => {
-    const { newMessage, conversations, chatState } = get();
+  setLoading: (isLoading) => set({ isLoading }),
+
+  setError: (error) => set({ error }),
+
+  // Initialize chat service and load data
+  initializeChat: async (userId: string, role: 'admin' | 'patient' = 'patient') => {
+    const { setLoading, setError, loadConversations } = get();
+    
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Initialize chat service
+      await chatService.initialize(userId, role);
+      
+      // Set current user
+      const currentUser = chatService.getCurrentUser();
+      set({ currentUser });
+
+      // Load conversations
+      await loadConversations();
+
+      // Set up real-time subscriptions
+      const subscription = chatService.subscribeToAllConversations(
+        (type, data) => {
+          const { conversations } = get();
+          
+          if (type === 'new_message') {
+            const message = data as ChatMessage;
+            // Find the conversation and add the message
+            const updatedConversations = conversations.map(conv => {
+              if (conv.messages.some(m => m.id === message.id)) {
+                // Message is for this conversation
+                return {
+                  ...conv,
+                  messages: [...conv.messages, message],
+                  lastMessage: message,
+                  unreadCount: message.isFromCurrentUser ? conv.unreadCount : conv.unreadCount + 1
+                };
+              }
+              return conv;
+            });
+            set({ conversations: updatedConversations });
+          }
+        },
+        (error) => {
+          console.error('Real-time subscription error:', error);
+          setError('Connection error. Messages may not update in real-time.');
+        }
+      );
+
+      set({ realtimeSubscription: subscription });
+    } catch (error) {
+      console.error('Failed to initialize chat:', error);
+      setError('Failed to load chat. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  },
+
+  // Load conversations from Supabase
+  loadConversations: async () => {
+    const { setLoading, setError } = get();
+    
+    try {
+      setLoading(true);
+      const conversations = await chatService.getConversations();
+      set({ conversations });
+    } catch (error) {
+      console.error('Failed to load conversations:', error);
+      setError('Failed to load conversations');
+    } finally {
+      setLoading(false);
+    }
+  },
+
+  // Send message with optimistic updates
+  handleSendMessage: async () => {
+    const { newMessage, conversations, chatState, currentUser } = get();
     const activeConv = conversations.find(
       (conv) => conv.id === chatState.activeConversation
     );
 
-    if (!newMessage.trim() || !activeConv) return;
+    if (!newMessage.trim() || !activeConv || !currentUser) return;
 
-    const message: ChatMessage = {
-      id: `msg-${Date.now()}`,
+    // Create optimistic message
+    const optimisticMessage: ChatMessage = {
+      id: `optimistic-${Date.now()}`,
       content: newMessage.trim(),
       timestamp: new Date().toISOString(),
-      senderId: mockChatData.currentUser.id,
+      senderId: currentUser.id,
       isFromCurrentUser: true,
     };
 
+    // Add optimistic message immediately
     const updatedConversations = conversations.map((conv) =>
       conv.id === activeConv.id
         ? {
             ...conv,
-            messages: [...conv.messages, message],
-            lastMessage: message,
+            messages: [...conv.messages, optimisticMessage],
+            lastMessage: optimisticMessage,
           }
         : conv
     );
@@ -68,6 +164,72 @@ const chatStore = create<ChatStore>((set, get) => ({
       conversations: updatedConversations,
       newMessage: "",
     });
+
+    try {
+      // Get the other participant to send message to
+      const otherParticipant = chatService.getOtherParticipant(activeConv);
+      if (!otherParticipant) {
+        throw new Error('No recipient found');
+      }
+
+      // Send real message
+      const sentMessage = await chatService.sendMessage(
+        activeConv.id,
+        newMessage.trim(),
+        otherParticipant.id
+      );
+
+      if (sentMessage) {
+        // Replace optimistic message with real message
+        const finalConversations = get().conversations.map((conv) =>
+          conv.id === activeConv.id
+            ? {
+                ...conv,
+                messages: conv.messages.map((msg) =>
+                  msg.id === optimisticMessage.id ? sentMessage : msg
+                ),
+                lastMessage: sentMessage,
+              }
+            : conv
+        );
+        set({ conversations: finalConversations });
+      } else {
+        // Remove optimistic message on failure
+        const revertedConversations = get().conversations.map((conv) =>
+          conv.id === activeConv.id
+            ? {
+                ...conv,
+                messages: conv.messages.filter((msg) => msg.id !== optimisticMessage.id),
+                lastMessage: conv.messages.length > 1 
+                  ? conv.messages[conv.messages.length - 2] 
+                  : conv.lastMessage,
+              }
+            : conv
+        );
+        set({ 
+          conversations: revertedConversations,
+          error: 'Failed to send message. Please try again.'
+        });
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Remove optimistic message on error
+      const revertedConversations = get().conversations.map((conv) =>
+        conv.id === activeConv.id
+          ? {
+              ...conv,
+              messages: conv.messages.filter((msg) => msg.id !== optimisticMessage.id),
+              lastMessage: conv.messages.length > 1 
+                ? conv.messages[conv.messages.length - 2] 
+                : conv.lastMessage,
+            }
+          : conv
+      );
+      set({ 
+        conversations: revertedConversations,
+        error: 'Failed to send message. Please check your connection.'
+      });
+    }
   },
 
   openConversation: (conversationId) => {
@@ -76,6 +238,7 @@ const chatStore = create<ChatStore>((set, get) => ({
     // Update chat state
     set({
       chatState: { state: "conversation", activeConversation: conversationId },
+      error: null // Clear any previous errors
     });
 
     // Mark conversation as read
@@ -84,6 +247,9 @@ const chatStore = create<ChatStore>((set, get) => ({
     );
 
     set({ conversations: updatedConversations });
+
+    // Mark as read in backend
+    chatService.markConversationAsRead(conversationId);
   },
 
   goBack: () => {
@@ -103,6 +269,40 @@ const chatStore = create<ChatStore>((set, get) => ({
       },
     });
   },
+
+  // Add message to specific conversation (for real-time updates)
+  addMessage: (conversationId: string, message: ChatMessage) => {
+    const { conversations } = get();
+    const updatedConversations = conversations.map((conv) =>
+      conv.id === conversationId
+        ? {
+            ...conv,
+            messages: [...conv.messages, message],
+            lastMessage: message,
+            unreadCount: message.isFromCurrentUser ? conv.unreadCount : conv.unreadCount + 1,
+          }
+        : conv
+    );
+    set({ conversations: updatedConversations });
+  },
+
+  // Update unread count for a conversation
+  updateConversationUnreadCount: (conversationId: string, count: number) => {
+    const { conversations } = get();
+    const updatedConversations = conversations.map((conv) =>
+      conv.id === conversationId ? { ...conv, unreadCount: count } : conv
+    );
+    set({ conversations: updatedConversations });
+  },
+
+  // Cleanup subscriptions
+  cleanup: () => {
+    const { realtimeSubscription } = get();
+    if (realtimeSubscription) {
+      chatService.cleanup();
+      set({ realtimeSubscription: null });
+    }
+  }
 }));
 
 // Hook with computed values using selectors
@@ -110,13 +310,20 @@ export const useChatState = () => {
   const chatState = chatStore((state) => state.chatState);
   const conversations = chatStore((state) => state.conversations);
   const newMessage = chatStore((state) => state.newMessage);
+  const isLoading = chatStore((state) => state.isLoading);
+  const error = chatStore((state) => state.error);
+  const currentUser = chatStore((state) => state.currentUser);
+  
   const setChatState = chatStore((state) => state.setChatState);
   const setConversations = chatStore((state) => state.setConversations);
   const setNewMessage = chatStore((state) => state.setNewMessage);
+  const initializeChat = chatStore((state) => state.initializeChat);
+  const loadConversations = chatStore((state) => state.loadConversations);
   const handleSendMessage = chatStore((state) => state.handleSendMessage);
   const openConversation = chatStore((state) => state.openConversation);
   const goBack = chatStore((state) => state.goBack);
   const toggleExpanded = chatStore((state) => state.toggleExpanded);
+  const cleanup = chatStore((state) => state.cleanup);
 
   // Computed values
   const totalUnreadCount = conversations.reduce(
@@ -132,14 +339,20 @@ export const useChatState = () => {
     chatState,
     conversations,
     newMessage,
+    isLoading,
+    error,
+    currentUser,
     totalUnreadCount,
     activeConversation,
     setChatState,
     setConversations,
     setNewMessage,
+    initializeChat,
+    loadConversations,
     handleSendMessage,
     openConversation,
     goBack,
     toggleExpanded,
+    cleanup,
   };
 };

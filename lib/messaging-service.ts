@@ -45,11 +45,18 @@ class MessagingService {
       if (messageError) throw messageError
 
       // Update conversation last_message_at and unread_count
+      // First get current unread_count
+      const { data: currentConv } = await supabase
+        .from('conversations')
+        .select('unread_count')
+        .eq('id', conversationId)
+        .single()
+
       const { error: conversationError } = await supabase
         .from('conversations')
         .update({
           last_message_at: new Date().toISOString(),
-          unread_count: supabase.sql`unread_count + 1`
+          unread_count: (currentConv?.unread_count || 0) + 1
         })
         .eq('id', conversationId)
 

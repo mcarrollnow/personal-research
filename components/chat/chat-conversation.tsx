@@ -15,6 +15,8 @@ interface ChatConversationProps {
   newMessage: string;
   setNewMessage: (message: string) => void;
   onSendMessage: () => void;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
 interface MessageGroup {
@@ -28,6 +30,8 @@ export default function ChatConversation({
   newMessage,
   setNewMessage,
   onSendMessage,
+  isLoading = false,
+  error = null,
 }: ChatConversationProps) {
   // Group messages by time and sender
   const groupMessages = (messages: ChatMessageType[]): MessageGroup[] => {
@@ -59,6 +63,25 @@ export default function ChatConversation({
   };
 
   const messageGroups = groupMessages(activeConversation.messages);
+  const otherParticipant = activeConversation.participants.find(
+    (p) => p.name !== "JOYBOY" // TODO: Use actual current user
+  );
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Form submitted:', { isLoading, newMessage: newMessage.trim() });
+    if (!isLoading && newMessage.trim()) {
+      console.log('Calling onSendMessage...');
+      onSendMessage();
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
 
   return (
     <motion.div
@@ -67,114 +90,144 @@ export default function ChatConversation({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="h-full flex flex-col overflow-clip"
+      className="h-full flex flex-col"
     >
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto overflow-x-clip p-4 space-y-4">
-        {/* Date header */}
-        <div className="text-center">
-          <Badge
-            variant="secondary"
-            className="font-medium text-xs text-foreground/40"
-          >
-            {formatDate(activeConversation.messages[0]?.timestamp || "")}
-          </Badge>
+      {/* Conversation Header */}
+      <div className="p-4 border-b border-border bg-background/80 backdrop-blur-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
+            {otherParticipant?.avatar ? (
+              <img 
+                src={otherParticipant.avatar} 
+                alt={otherParticipant.name || "User"} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              otherParticipant?.name?.[0] || "?"
+            )}
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-sm">
+              {otherParticipant?.name || "Unknown User"}
+            </h3>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <span className="text-xs text-muted-foreground">
+                {otherParticipant?.role === 'admin' ? 'Care Team' : 'Patient'}
+              </span>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <AnimatePresence initial={false}>
-          {messageGroups.map((group, groupIndex) => (
-            <motion.div
-              key={`group-${groupIndex}`}
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messageGroups.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-center">
+            <div className="text-muted-foreground">
+              <div className="text-2xl mb-2">👋</div>
+              <p className="text-sm">Start the conversation!</p>
+            </div>
+          </div>
+        ) : (
+          messageGroups.map((group, groupIndex) => (
+            <div
+              key={groupIndex}
               className={cn(
                 "flex flex-col gap-1",
                 group.isFromCurrentUser ? "items-end" : "items-start"
               )}
             >
-              {/* Timestamp for the group */}
-              <div className="w-full flex justify-center mb-1">
-                <span className="text-xs text-foreground/40">
-                  {formatTime(group.timestamp)}
-                </span>
+              {/* Timestamp */}
+              <div className="text-xs text-muted-foreground px-3 mb-1">
+                {formatDate(group.timestamp)} • {formatTime(group.timestamp)}
               </div>
 
-              {/* Messages in the group */}
+              {/* Messages in group */}
               {group.messages.map((message, messageIndex) => (
                 <motion.div
                   key={message.id}
-                  initial={{
-                    opacity: 0,
-                    scale: 0.8,
-                    x: group.isFromCurrentUser ? 20 : -20,
-                    y: 10,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    scale: 1,
-                    x: 0,
-                    y: 0,
-                  }}
-                  transition={{
-                    duration: 0.4,
-                    ease: "backOut",
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ 
+                    duration: 0.2, 
                     delay: messageIndex * 0.05,
+                    ease: "easeOut" 
                   }}
                   className={cn(
-                    "max-w-[70%] rounded-lg px-3 py-2 text-sm font-medium",
+                    "max-w-[80%] px-3 py-2 rounded-lg text-sm",
                     group.isFromCurrentUser
                       ? "bg-primary text-primary-foreground"
-                      : "bg-accent text-foreground",
-                    // First message in group gets more rounded corners on the outer side
-                    messageIndex === 0 && group.isFromCurrentUser
-                      ? "rounded-br-sm"
-                      : messageIndex === 0 && !group.isFromCurrentUser
-                      ? "rounded-bl-sm"
+                      : "bg-muted text-muted-foreground",
+                    messageIndex === 0
+                      ? group.isFromCurrentUser
+                        ? "rounded-tr-sm"
+                        : "rounded-tl-sm"
                       : "",
-                    // Last message in group gets more rounded corners on the outer side
-                    messageIndex === group.messages.length - 1 &&
-                      group.isFromCurrentUser
-                      ? "rounded-tr-sm"
-                      : messageIndex === group.messages.length - 1 &&
-                        !group.isFromCurrentUser
-                      ? "rounded-tl-sm"
+                    messageIndex === group.messages.length - 1
+                      ? group.isFromCurrentUser
+                        ? "rounded-br-sm"
+                        : "rounded-bl-sm"
                       : ""
                   )}
-                  layout
                 >
-                  {message.content}
+                  <div className="flex items-start gap-2">
+                    <span className="flex-1">{message.content}</span>
+                    {message.priority && message.priority !== 'normal' && (
+                      <Badge 
+                        variant={message.priority === 'urgent' ? 'destructive' : 'secondary'}
+                        className="text-xs ml-2"
+                      >
+                        {message.priority}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {/* Show optimistic loading for messages being sent */}
+                  {message.id.startsWith('optimistic-') && (
+                    <div className="flex items-center gap-1 mt-1 opacity-60">
+                      <div className="w-2 h-2 rounded-full bg-current animate-pulse"></div>
+                      <span className="text-xs">Sending...</span>
+                    </div>
+                  )}
                 </motion.div>
               ))}
-            </motion.div>
-          ))}
-        </AnimatePresence>
+            </div>
+          ))
+        )}
       </div>
 
+      {/* Error Display */}
+      {error && (
+        <div className="px-4 py-2 bg-destructive/10 border-t border-destructive/20">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
+
       {/* Message Input */}
-      <div className="border-t-2 border-muted sticky bottom-0 bg-secondary h-12 p-1">
-        <Input
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder={`Message ${
-            activeConversation.participants.find(
-              (p) => p.id !== "joyboy" // Using current user ID
-            )?.name
-          }`}
-          className="flex-1 rounded-none border-none text-foreground placeholder-foreground/40 text-sm"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") onSendMessage();
-          }}
-        />
-        <Button
-          variant={newMessage.trim() ? "default" : "outline"}
-          onClick={onSendMessage}
-          disabled={!newMessage.trim()}
-          className="absolute right-1.5 top-1.5 h-8 w-12 p-0"
-        >
-          <ArrowRightIcon className="w-4 h-4" />
-        </Button>
+      <div className="p-4 border-t border-border bg-background/80 backdrop-blur-sm">
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <Input
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder={isLoading ? "Sending..." : "Type a message..."}
+            className="flex-1"
+            disabled={isLoading}
+          />
+          <Button 
+            type="submit" 
+            size="icon" 
+            disabled={!newMessage.trim() || isLoading}
+            className="shrink-0"
+          >
+            {isLoading ? (
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <ArrowRightIcon className="w-4 h-4" />
+            )}
+          </Button>
+        </form>
       </div>
     </motion.div>
   );
