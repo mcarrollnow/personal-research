@@ -10,6 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   MessageSquare, 
   Search,
@@ -22,7 +25,14 @@ import {
   Archive,
   Star,
   User,
-  Calendar
+  Calendar,
+  Download,
+  FileText,
+  Trash2,
+  Tag,
+  SortAsc,
+  SortDesc,
+  RefreshCw
 } from "lucide-react";
 import Link from "next/link";
 import { ConversationSummary, MessagePriority } from "@/types/admin-chat";
@@ -31,6 +41,21 @@ interface InboxMessage extends ConversationSummary {
   selected: boolean;
   message_type: string;
   created_at: string;
+  tags?: string[];
+  archived?: boolean;
+  starred?: boolean;
+}
+
+interface AdvancedSearchFilters {
+  dateRange: {
+    start: string;
+    end: string;
+  };
+  messageTypes: string[];
+  tags: string[];
+  patientIds: string[];
+  archived: boolean | null;
+  starred: boolean | null;
 }
 
 export default function AdminInboxPage() {
@@ -43,6 +68,21 @@ export default function AdminInboxPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedMessages, setSelectedMessages] = useState<string[]>([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedSearchFilters>({
+    dateRange: { start: "", end: "" },
+    messageTypes: [],
+    tags: [],
+    patientIds: [],
+    archived: null,
+    starred: null
+  });
+  const [sortBy, setSortBy] = useState<'date' | 'priority' | 'patient' | 'status'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [showArchived, setShowArchived] = useState(false);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'json' | 'csv' | 'pdf'>('json');
 
   useEffect(() => {
     if (!currentAdmin) {
@@ -52,8 +92,8 @@ export default function AdminInboxPage() {
   }, [currentAdmin]);
 
   useEffect(() => {
-    filterMessages();
-  }, [messages, searchQuery, priorityFilter, statusFilter]);
+    filterAndSortMessages();
+  }, [messages, searchQuery, priorityFilter, statusFilter, advancedFilters, sortBy, sortOrder, showArchived]);
 
   useEffect(() => {
     setShowBulkActions(selectedMessages.length > 0);
@@ -157,14 +197,20 @@ export default function AdminInboxPage() {
     }
   };
 
-  const filterMessages = () => {
+  const filterAndSortMessages = () => {
     let filtered = messages;
 
-    // Search filter
+    // Archive filter
+    if (!showArchived) {
+      filtered = filtered.filter(message => !message.archived);
+    }
+
+    // Basic search filter
     if (searchQuery) {
       filtered = filtered.filter(message =>
         message.patient_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        message.last_message_preview.toLowerCase().includes(searchQuery.toLowerCase())
+        message.last_message_preview.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        message.patient_id.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -182,20 +228,215 @@ export default function AdminInboxPage() {
       }
     }
 
-    // Sort by priority and time
+    // Advanced filters
+    if (advancedFilters.dateRange.start) {
+      filtered = filtered.filter(message => 
+        new Date(message.created_at) >= new Date(advancedFilters.dateRange.start)
+      );
+    }
+
+    if (advancedFilters.dateRange.end) {
+      filtered = filtered.filter(message => 
+        new Date(message.created_at) <= new Date(advancedFilters.dateRange.end)
+      );
+    }
+
+    if (advancedFilters.messageTypes.length > 0) {
+      filtered = filtered.filter(message => 
+        advancedFilters.messageTypes.includes(message.message_type)
+      );
+    }
+
+    if (advancedFilters.tags.length > 0) {
+      filtered = filtered.filter(message => 
+        message.tags?.some(tag => advancedFilters.tags.includes(tag))
+      );
+    }
+
+    if (advancedFilters.patientIds.length > 0) {
+      filtered = filtered.filter(message => 
+        advancedFilters.patientIds.includes(message.patient_id)
+      );
+    }
+
+    if (advancedFilters.starred !== null) {
+      filtered = filtered.filter(message => 
+        Boolean(message.starred) === advancedFilters.starred
+      );
+    }
+
+    // Sorting
     filtered.sort((a, b) => {
-      const priorityOrder = { urgent: 4, high: 3, normal: 2, low: 1 };
-      const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
-      const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
-      
-      if (aPriority !== bPriority) {
-        return bPriority - aPriority; // Higher priority first
+      let comparison = 0;
+
+      switch (sortBy) {
+        case 'date':
+          comparison = new Date(a.last_message_at).getTime() - new Date(b.last_message_at).getTime();
+          break;
+        case 'priority':
+          const priorityOrder = { urgent: 4, high: 3, normal: 2, low: 1 };
+          const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+          const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
+          comparison = aPriority - bPriority;
+          break;
+        case 'patient':
+          comparison = a.patient_name.localeCompare(b.patient_name);
+          break;
+        case 'status':
+          comparison = a.unread_count - b.unread_count;
+          break;
       }
-      
-      return new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime();
+
+      return sortOrder === 'asc' ? comparison : -comparison;
     });
 
     setFilteredMessages(filtered);
+  };
+
+  // Archive/Unarchive messages
+  const archiveMessages = async (messageIds: string[], archive: boolean = true) => {
+    try {
+      // Update local state immediately
+      setMessages(prev => prev.map(msg => 
+        messageIds.includes(msg.id) ? { ...msg, archived: archive } : msg
+      ));
+
+      // TODO: Update in database
+      // await messagingService.updateConversationStatus(messageIds, archive ? 'archived' : 'active');
+      
+      setSelectedMessages([]);
+    } catch (error) {
+      console.error('Error archiving messages:', error);
+    }
+  };
+
+  // Star/Unstar messages
+  const starMessages = async (messageIds: string[], starred: boolean = true) => {
+    try {
+      setMessages(prev => prev.map(msg => 
+        messageIds.includes(msg.id) ? { ...msg, starred } : msg
+      ));
+
+      // TODO: Update in database
+      setSelectedMessages([]);
+    } catch (error) {
+      console.error('Error starring messages:', error);
+    }
+  };
+
+  // Add tags to messages
+  const addTagsToMessages = async (messageIds: string[], tags: string[]) => {
+    try {
+      setMessages(prev => prev.map(msg => 
+        messageIds.includes(msg.id) 
+          ? { ...msg, tags: [...(msg.tags || []), ...tags].filter((tag, index, arr) => arr.indexOf(tag) === index) }
+          : msg
+      ));
+
+      // Update available tags
+      setAvailableTags(prev => [...new Set([...prev, ...tags])]);
+      setSelectedMessages([]);
+    } catch (error) {
+      console.error('Error adding tags:', error);
+    }
+  };
+
+  // Export conversations
+  const exportConversations = async () => {
+    try {
+      const dataToExport = selectedMessages.length > 0 
+        ? filteredMessages.filter(msg => selectedMessages.includes(msg.id))
+        : filteredMessages;
+
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        totalConversations: dataToExport.length,
+        conversations: dataToExport.map(msg => ({
+          id: msg.id,
+          patientName: msg.patient_name,
+          patientId: msg.patient_id,
+          lastMessage: msg.last_message_preview,
+          lastMessageAt: msg.last_message_at,
+          priority: msg.priority,
+          status: msg.status,
+          unreadCount: msg.unread_count,
+          messageType: msg.message_type,
+          tags: msg.tags || [],
+          starred: msg.starred || false,
+          archived: msg.archived || false
+        }))
+      };
+
+      const filename = `conversations-export-${new Date().toISOString().split('T')[0]}`;
+
+      switch (exportFormat) {
+        case 'json':
+          const jsonBlob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+          downloadFile(jsonBlob, `${filename}.json`);
+          break;
+        case 'csv':
+          const csvContent = convertToCSV(exportData.conversations);
+          const csvBlob = new Blob([csvContent], { type: 'text/csv' });
+          downloadFile(csvBlob, `${filename}.csv`);
+          break;
+        case 'pdf':
+          // TODO: Implement PDF export
+          alert('PDF export not yet implemented');
+          break;
+      }
+
+      setShowExportDialog(false);
+    } catch (error) {
+      console.error('Error exporting conversations:', error);
+    }
+  };
+
+  const convertToCSV = (data: any[]) => {
+    const headers = ['ID', 'Patient Name', 'Patient ID', 'Last Message', 'Date', 'Priority', 'Status', 'Unread Count', 'Type', 'Tags'];
+    const csvRows = [
+      headers.join(','),
+      ...data.map(row => [
+        row.id,
+        `"${row.patientName}"`,
+        row.patientId,
+        `"${row.lastMessage.replace(/"/g, '""')}"`,
+        row.lastMessageAt,
+        row.priority,
+        row.status,
+        row.unreadCount,
+        row.messageType,
+        `"${(row.tags || []).join(', ')}"`
+      ].join(','))
+    ];
+    return csvRows.join('\n');
+  };
+
+  const downloadFile = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSearchQuery("");
+    setPriorityFilter("all");
+    setStatusFilter("all");
+    setAdvancedFilters({
+      dateRange: { start: "", end: "" },
+      messageTypes: [],
+      tags: [],
+      patientIds: [],
+      archived: null,
+      starred: null
+    });
+    setSortBy('date');
+    setSortOrder('desc');
   };
 
   const toggleMessageSelection = (messageId: string) => {
