@@ -1,3 +1,4 @@
+import React, { useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,12 @@ export default function ChatConversation({
   isLoading = false,
   error = null,
 }: ChatConversationProps) {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [activeConversation.messages]);
   // Group messages by time and sender
   const groupMessages = (messages: ChatMessageType[]): MessageGroup[] => {
     const groups: MessageGroup[] = [];
@@ -195,6 +202,8 @@ export default function ChatConversation({
             </div>
           ))
         )}
+        {/* Invisible element to scroll to */}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Error Display */}

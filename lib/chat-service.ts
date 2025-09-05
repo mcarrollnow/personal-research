@@ -131,9 +131,7 @@ class ChatService {
   // Get all conversations for current user
   async getConversations(): Promise<ChatConversation[]> {
     try {
-      const filters = this.currentUserRole === 'admin' 
-        ? {} // Admin sees all conversations
-        : { patient_search: this.currentUserId || undefined } // Use patient_search filter
+      const filters = {} // Both admin and patient see all conversations for now
 
       const response = await messagingService.getConversations(filters)
       
@@ -343,13 +341,6 @@ class ChatService {
     onError?: (error: any) => void
   ) {
     if (!this.currentUserId) return null
-
-    // Check configuration first
-    const configCheck = this.checkSupabaseConfig()
-    if (!configCheck.isConfigured) {
-      console.warn('Real-time subscriptions disabled: Supabase not configured')
-      return null
-    }
 
     return messagingService.subscribeToAllConversations(
       this.currentUserId,

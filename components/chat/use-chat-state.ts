@@ -78,31 +78,29 @@ const chatStore = create<ChatStore>((set, get) => ({
       await loadConversations();
 
       // Set up real-time subscriptions
+      console.log('Setting up real-time subscription for user:', userId, 'role:', role);
       const subscription = chatService.subscribeToAllConversations(
         (type, data) => {
-          const { conversations } = get();
+          console.log('Real-time event received for user:', userId, { type, data });
           
           if (type === 'new_message') {
             const message = data as ChatMessage;
-            // Find the conversation and add the message
-            const updatedConversations = conversations.map(conv => {
-              if (conv.messages.some(m => m.id === message.id)) {
-                // Message is for this conversation
-                return {
-                  ...conv,
-                  messages: [...conv.messages, message],
-                  lastMessage: message,
-                  unreadCount: message.isFromCurrentUser ? conv.unreadCount : conv.unreadCount + 1
-                };
-              }
-              return conv;
-            });
-            set({ conversations: updatedConversations });
+            console.log('Processing new message for user:', userId, message);
+            
+            // Use setTimeout to avoid render loop issues
+            setTimeout(() => {
+              chatService.getConversations().then(updatedConversations => {
+                console.log('Updated conversations loaded for user:', userId, updatedConversations.length);
+                set({ conversations: updatedConversations });
+              });
+            }, 0);
           }
         },
         (error) => {
           console.error('Real-time subscription error:', error);
-          setError('Connection error. Messages may not update in real-time.');
+          setTimeout(() => {
+            setError('Connection error. Messages may not update in real-time.');
+          }, 0);
         }
       );
 

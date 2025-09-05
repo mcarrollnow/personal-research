@@ -332,13 +332,19 @@ class MessagingService {
   }
 
   subscribeToAllConversations(
-    adminId: string,
+    userId: string,
     onMessage: (event: RealtimeMessageEvent) => void,
     onError?: (error: any) => void
   ) {
     try {
+      // Use unique channel for each user to avoid conflicts
+      console.log('Creating subscription for userId:', userId);
+      
+      // Clean up any existing subscription first
+      this.unsubscribeFromRealtime();
+      
       const subscription = supabase
-        .channel(`admin:${adminId}`)
+        .channel(`messages:${userId}:${Date.now()}`)
         .on(
           'postgres_changes',
           {
@@ -347,6 +353,7 @@ class MessagingService {
             table: 'messages'
           },
           (payload) => {
+            console.log('Supabase real-time payload received for user:', userId, payload);
             const event: RealtimeMessageEvent = {
               type: payload.eventType === 'INSERT' ? 'message_received' : 'message_read',
               payload: payload.new as AdminMessage,
@@ -371,7 +378,9 @@ class MessagingService {
             onMessage(event)
           }
         )
-        .subscribe()
+        .subscribe((status) => {
+          console.log('Subscription status for user:', userId, status);
+        })
 
       this.realtimeSubscription = subscription
       return subscription
