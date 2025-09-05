@@ -15,7 +15,8 @@ import {
   Home,
   Inbox,
   FileText,
-  Bell
+  Bell,
+  Send
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -59,6 +60,12 @@ export default function AdminLayout({ children, title, description }: AdminLayou
       href: "/admin/inbox",
       icon: Inbox,
       badge: "12", // This would be dynamic in real implementation
+      permission: "send_messages"
+    },
+    {
+      name: "Broadcast",
+      href: "/admin/broadcast",
+      icon: Send,
       permission: "send_messages"
     },
     {
