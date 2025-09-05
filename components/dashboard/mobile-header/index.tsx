@@ -18,7 +18,7 @@ export function MobileHeader({ mockData }: MobileHeaderProps) {
   return (
     <div className="lg:hidden h-header-mobile sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
       <div className="flex items-center justify-between px-4 py-3">
-        {/* Left: Sidebar Menu */}
+                        {/* Left: Sidebar Menu */}
         <SidebarTrigger />
 
         {/* Center: Monkey Logo + Time */}
@@ -33,7 +33,7 @@ export function MobileHeader({ mockData }: MobileHeaderProps) {
         <Sheet>
           {/* Right: Notifications Menu */}
           <SheetTrigger asChild>
-            <Button variant="secondary" size="icon" className="relative">
+            <Button variant="secondary" size="icon" className="relative h-10 w-10 min-h-[44px] min-w-[44px] touch-manipulation">
               {unreadCount > 0 && (
                 <Badge className="absolute border-2 border-background -top-1 -left-2 h-5 w-5 text-xs p-0 flex items-center justify-center">
                   {unreadCount > 9 ? "9+" : unreadCount}

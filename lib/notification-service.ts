@@ -67,18 +67,23 @@ class NotificationService {
   private notificationPermission: NotificationPermission = 'default'
 
   constructor() {
-    this.initializeBrowserNotifications()
+    // Don't automatically request permissions - wait for user interaction
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      this.notificationPermission = Notification.permission
+    }
   }
 
-  // Initialize browser notification permissions
-  private async initializeBrowserNotifications(): Promise<void> {
-    if ('Notification' in window) {
-      this.notificationPermission = Notification.permission
-      
-      if (this.notificationPermission === 'default') {
-        this.notificationPermission = await Notification.requestPermission()
-      }
+  // Initialize browser notification permissions (must be called from user interaction)
+  async requestNotificationPermission(): Promise<NotificationPermission> {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      return 'denied'
     }
+    
+    if (this.notificationPermission === 'default') {
+      this.notificationPermission = await Notification.requestPermission()
+    }
+    
+    return this.notificationPermission
   }
 
   // Send browser notification

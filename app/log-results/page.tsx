@@ -16,6 +16,8 @@ import { Bullet } from "@/components/ui/bullet";
 import { googleSheetsService } from "@/lib/google-sheets";
 import { dashboardDataService } from "@/lib/dashboard-data";
 import { patientAuthService } from "@/lib/patient-auth";
+import { integrationService } from "@/lib/integration-service";
+import { mobileOptimizationService, type MobileOptimization } from "@/lib/mobile-optimization";
 import { useEffect } from "react";
 
 export default function LogResultsPage() {
@@ -42,9 +44,24 @@ export default function LogResultsPage() {
     { date: "3 days ago", weight: "186.5 lbs", status: "Partial" },
     { date: "4 days ago", weight: "186.9 lbs", status: "Complete" }
   ]);
+  const [complianceAlerts, setComplianceAlerts] = useState<any[]>([]);
+  const [complianceRate, setComplianceRate] = useState<number>(0);
+  const [mobileOptimization, setMobileOptimization] = useState<MobileOptimization>({
+    isMobile: false,
+    isTablet: false,
+    isDesktop: true,
+    orientation: 'landscape',
+    screenSize: 'large',
+    touchEnabled: false
+  });
 
-  // Fetch real recent entries on component mount
+  // Fetch real recent entries and check compliance on component mount
   useEffect(() => {
+    // Initialize mobile optimization on client only
+    mobileOptimizationService.initialize();
+    setMobileOptimization(mobileOptimizationService.getCurrentOptimization());
+    const unsubscribe = mobileOptimizationService.subscribe(setMobileOptimization);
+    
     const fetchRecentEntries = async () => {
       try {
         const entries = await dashboardDataService.getRecentEntries();
@@ -56,7 +73,26 @@ export default function LogResultsPage() {
       }
     };
 
+    const checkCompliance = async () => {
+      try {
+        const patientId = patientAuthService.getCurrentPatientId() || 'PATIENT-001';
+        // Only check compliance on client-side to avoid hydration issues
+        if (typeof window !== 'undefined') {
+          const alerts = await integrationService.checkComplianceAlerts(patientId);
+          setComplianceAlerts(alerts);
+          
+          const rate = await integrationService.getComplianceRate(patientId);
+          setComplianceRate(rate);
+        }
+      } catch (error) {
+        console.error('Error checking compliance:', error);
+      }
+    };
+
     fetchRecentEntries();
+    checkCompliance();
+    
+    return unsubscribe;
   }, []);
 
   const handleInputChange = (field: string, value: string) => {
@@ -92,6 +128,16 @@ export default function LogResultsPage() {
     const success = await googleSheetsService.submitData(dailyLogData, 'dailyLogs');
     
     if (success) {
+      // Check for progress milestones after successful submission
+      const currentWeight = parseFloat(formData.weight);
+      if (currentWeight > 0) {
+        try {
+          await integrationService.checkProgressMilestones(patientId, currentWeight, 8); // Week 8 as example
+        } catch (error) {
+          console.error('Error checking milestones:', error);
+        }
+      }
+      
       // Reset form after successful submission
       setFormData({
         weight: "",
@@ -111,6 +157,16 @@ export default function LogResultsPage() {
     }
   };
 
+  // Use static layouts until client hydration to avoid hydration mismatch
+  const touchOptimizations = mobileOptimizationService.getTouchOptimizations();
+  const mobileLayout = {
+    gridClass: 'grid grid-cols-1 lg:grid-cols-2 gap-6', // Static responsive grid
+    cardClass: 'p-6 rounded-lg border bg-card text-card-foreground shadow-sm',
+    statsClass: 'grid grid-cols-1 md:grid-cols-3 gap-6',
+    chartClass: 'h-96 w-full'
+  };
+  const mobileClasses = mobileOptimizationService.getMobileSpecificClasses();
+
   return (
     <DashboardPageLayout
       header={{
@@ -119,6 +175,90 @@ export default function LogResultsPage() {
         icon: ProcessorIcon,
       }}
     >
+      {/* Compliance Alerts */}
+      {complianceAlerts.length > 0 && (
+        <DashboardCard
+          title="📊 COMPLIANCE REMINDERS"
+          intent="default"
+          addon={<Badge variant="destructive">{complianceAlerts.length} Alert{complianceAlerts.length > 1 ? 's' : ''}</Badge>}
+        >
+          <div className="space-y-3">
+            {complianceAlerts.map((alert, index) => (
+              <div key={alert.id} className="p-3 bg-warning/10 rounded-lg border border-warning/20">
+                <div className="flex items-start gap-2">
+                  <div className="text-lg">⚠️</div>
+                  <div className="flex-1">
+                    <h4 className="font-medium text-warning mb-1">
+                      {alert.type.replace('_', ' ').toUpperCase()}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {alert.type === 'missed_dose' && `Haven't logged doses for ${alert.daysCount} days`}
+                      {alert.type === 'incomplete_log' && `Haven't logged complete measurements for ${alert.daysCount} days`}
+                      {alert.type === 'low_compliance' && `Compliance rate needs improvement`}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      A follow-up message has been sent to help you get back on track! 💪
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DashboardCard>
+      )}
+
+      {/* Compliance Stats */}
+      <div className={mobileLayout.gridClass + " mb-6"}>
+        <Card className="relative overflow-hidden">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2.5">
+              <Bullet variant={complianceRate >= 80 ? "success" : complianceRate >= 60 ? "warning" : "destructive"} />
+              COMPLIANCE RATE
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="bg-accent flex-1 pt-2 md:pt-6">
+            <div className={`text-2xl md:text-3xl font-display mb-2 ${
+              complianceRate >= 80 ? 'text-success' : 
+              complianceRate >= 60 ? 'text-warning' : 
+              'text-destructive'
+            }`}>
+              {Math.round(complianceRate)}%
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {complianceRate >= 80 ? 'Excellent tracking!' : 
+               complianceRate >= 60 ? 'Good - keep improving' : 
+               'Needs attention'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2.5">
+              <Bullet variant="default" />
+              STREAK
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="bg-accent flex-1 pt-2 md:pt-6">
+            <div className="text-2xl md:text-3xl font-display mb-2">5</div>
+            <p className="text-sm text-muted-foreground">Days logged consistently</p>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2.5">
+              <Bullet variant="default" />
+              NEXT GOAL
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="bg-accent flex-1 pt-2 md:pt-6">
+            <div className="text-2xl md:text-3xl font-display mb-2">7</div>
+            <p className="text-sm text-muted-foreground">Days for weekly streak</p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Today's Entry */}
       <DashboardCard
         title="TODAY'S ENTRY"
@@ -318,8 +458,15 @@ export default function LogResultsPage() {
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
-          <Button variant="outline">Save Draft</Button>
-          <Button onClick={handleSubmit}>Submit Entry</Button>
+          <Button variant="outline" className={`${touchOptimizations.buttonSize} ${touchOptimizations.fontSize}`}>
+            Save Draft
+          </Button>
+          <Button 
+            onClick={handleSubmit}
+            className={`${touchOptimizations.buttonSize} ${touchOptimizations.fontSize}`}
+          >
+            Submit Entry
+          </Button>
         </div>
       </DashboardCard>
 

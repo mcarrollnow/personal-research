@@ -9,8 +9,52 @@ import BoomIcon from "@/components/icons/boom";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Bullet } from "@/components/ui/bullet";
+import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { integrationService } from "@/lib/integration-service";
+import { mobileOptimizationService, type MobileOptimization } from "@/lib/mobile-optimization";
+import { patientAuthService } from "@/lib/patient-auth";
 
 export default function ProgressPage() {
+  const [milestones, setMilestones] = useState<any[]>([]);
+  const [isCheckingMilestones, setIsCheckingMilestones] = useState(false);
+  const [mobileOptimization, setMobileOptimization] = useState<MobileOptimization>({
+    isMobile: false,
+    isTablet: false,
+    isDesktop: true,
+    orientation: 'landscape',
+    screenSize: 'large',
+    touchEnabled: false
+  });
+
+  useEffect(() => {
+    // Initialize mobile optimization on client only
+    mobileOptimizationService.initialize();
+    setMobileOptimization(mobileOptimizationService.getCurrentOptimization());
+    const unsubscribe = mobileOptimizationService.subscribe(setMobileOptimization);
+    checkForMilestones();
+    return unsubscribe;
+  }, []);
+
+  const checkForMilestones = async () => {
+    setIsCheckingMilestones(true);
+    try {
+      const patientId = patientAuthService.getCurrentPatientId() || 'PATIENT-001';
+      const currentWeight = 172.6; // This would come from latest log entry
+      const weekNumber = 8; // This would be calculated from start date
+      
+      const newMilestones = await integrationService.checkProgressMilestones(patientId, currentWeight, weekNumber);
+      setMilestones(newMilestones);
+    } catch (error) {
+      console.error('Error checking milestones:', error);
+    } finally {
+      setIsCheckingMilestones(false);
+    }
+  };
+
+  const touchOptimizations = mobileOptimizationService.getTouchOptimizations();
+  const mobileLayout = mobileOptimizationService.getMobileDashboardLayout();
+
   // Mock progress data - this will come from Google Sheets
   const progressStats = [
     {
@@ -47,8 +91,40 @@ export default function ProgressPage() {
         icon: EmailIcon,
       }}
     >
+      {/* Milestone Celebrations */}
+      {milestones.length > 0 && (
+        <div className="mb-6">
+          <DashboardCard
+            title="🎉 NEW MILESTONES ACHIEVED!"
+            intent="success"
+            addon={<Badge variant="default">CONGRATULATIONS</Badge>}
+          >
+            <div className="space-y-4">
+              {milestones.map((milestone, index) => (
+                <div key={milestone.id} className="p-4 bg-success/10 rounded-lg border border-success/20">
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">🏆</div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-success mb-1">
+                        {milestone.type.replace('_', ' ').toUpperCase()} MILESTONE
+                      </h4>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {milestone.message}
+                      </p>
+                      <Badge variant="outline" className="text-xs">
+                        Achieved: {new Date(milestone.achievedAt).toLocaleDateString()}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DashboardCard>
+        </div>
+      )}
+
       {/* Progress Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+      <div className={mobileLayout.statsClass + " mb-6"}>
         {progressStats.map((stat, index) => (
           <DashboardStat
             key={index}
@@ -68,8 +144,20 @@ export default function ProgressPage() {
         <DashboardChart />
       </div>
 
+      {/* Milestone Check Button */}
+      <div className="mb-6 text-center">
+        <Button
+          onClick={checkForMilestones}
+          disabled={isCheckingMilestones}
+          className={`${touchOptimizations.buttonSize} ${touchOptimizations.fontSize}`}
+          variant="outline"
+        >
+          {isCheckingMilestones ? 'Checking for Milestones...' : '🎯 Check for New Milestones'}
+        </Button>
+      </div>
+
       {/* Progress Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className={mobileLayout.gridClass}>
         {/* Weight Progress */}
         <DashboardCard
           title="WEIGHT PROGRESS"

@@ -8,6 +8,7 @@
 
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "../styles/mobile-optimizations.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -241,3 +242,6 @@
 .group:hover .animate-marquee-down {
   animation-play-state: paused;
 }
+
+/* Import mobile optimization fixes */
+@import '../styles/mobile-optimizations.css';
