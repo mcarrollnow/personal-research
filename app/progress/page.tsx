@@ -1,3 +1,5 @@
+"use client"
+
 import DashboardPageLayout from "@/components/dashboard/layout";
 import DashboardCard from "@/components/dashboard/card";
 import DashboardStat from "@/components/dashboard/stat";

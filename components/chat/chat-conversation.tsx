@@ -15,7 +15,7 @@ interface ChatConversationProps {
   activeConversation: ChatConversationType;
   newMessage: string;
   setNewMessage: (message: string) => void;
-  onSendMessage: () => void;
+  sendMessage: () => void;
   isLoading?: boolean;
   error?: string | null;
 }

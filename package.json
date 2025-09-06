@@ -6,7 +6,13 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "test": "node simple-test.js",
+    "test:e2e": "npx tsx scripts/run-e2e-tests.ts",
+    "test:messaging": "node test-runner.js quick",
+    "test:integration": "npx tsx scripts/test-chat-integration.ts",
+    "deploy:optimize": "npm run build && npm run test:e2e",
+    "deploy:production": "npm run deploy:optimize && npm run start"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "latest",

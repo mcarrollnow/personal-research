@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { DashboardCard } from '@/components/dashboard-card'
-import { DashboardStat } from '@/components/dashboard-stat'
+import DashboardCard from '@/components/dashboard/card'
+import DashboardStat from '@/components/dashboard/stat'
 import { 
   BarChart, 
   Bar, 

@@ -9,8 +9,8 @@ import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { DashboardCard } from '@/components/dashboard-card'
-import { DashboardStat } from '@/components/dashboard-stat'
+import DashboardCard from '@/components/dashboard/card'
+import DashboardStat from '@/components/dashboard/stat'
 import {
   Bell,
   Settings,
